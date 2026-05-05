@@ -89,10 +89,13 @@ export function computeCurve(
   })
 }
 
-export function computeAUTC(curve: CurvePoint[]): number {
+export function computeAUTC(
+  curve: CurvePoint[],
+  pick: (p: CurvePoint) => number = (p) => p.pq,
+): number {
   if (curve.length < 2) return 0
   const xs = [0, ...curve.map((c) => c.threshold)]
-  const ys = [curve[0].pq, ...curve.map((c) => c.pq)]
+  const ys = [pick(curve[0]), ...curve.map(pick)]
   let area = 0
   for (let i = 0; i < xs.length - 1; i++) {
     area += (xs[i + 1] - xs[i]) * (ys[i] + ys[i + 1]) * 0.5
@@ -100,11 +103,14 @@ export function computeAUTC(curve: CurvePoint[]): number {
   return area
 }
 
-export function computeAUTCStep(curve: CurvePoint[]): number {
+export function computeAUTCStep(
+  curve: CurvePoint[],
+  pick: (p: CurvePoint) => number = (p) => p.pq,
+): number {
   if (curve.length < 2) return 0
   let area = 0
   for (let i = 0; i < curve.length - 1; i++) {
-    area += (curve[i + 1].threshold - curve[i].threshold) * curve[i + 1].pq
+    area += (curve[i + 1].threshold - curve[i].threshold) * pick(curve[i + 1])
   }
   return area
 }

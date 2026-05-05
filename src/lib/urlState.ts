@@ -9,6 +9,9 @@ export type SceneState = {
   matcher: MatcherKind
   thresholdMode: ThresholdMode
   showSortedAp: boolean
+  showAutc: boolean
+  showAutcSq: boolean
+  showAutcRq: boolean
 }
 
 const MATCHERS: readonly MatcherKind[] = ['greedy', 'hungarian', 'maximize-merge']
@@ -54,6 +57,9 @@ export const serializeSceneState = (state: SceneState): URLSearchParams => {
   params.set('matcher', state.matcher)
   params.set('mode', state.thresholdMode)
   params.set('sap', state.showSortedAp ? '1' : '0')
+  params.set('autc', state.showAutc ? '1' : '0')
+  params.set('asq', state.showAutcSq ? '1' : '0')
+  params.set('arq', state.showAutcRq ? '1' : '0')
   return params
 }
 
@@ -86,5 +92,26 @@ export const parseSceneState = (
   const showSortedAp =
     sapRaw === '1' ? true : sapRaw === '0' ? false : defaults.showSortedAp
 
-  return { refs, preds, matcher, thresholdMode, showSortedAp }
+  const autcRaw = params.get('autc')
+  const showAutc =
+    autcRaw === '1' ? true : autcRaw === '0' ? false : defaults.showAutc
+
+  const asqRaw = params.get('asq')
+  const showAutcSq =
+    asqRaw === '1' ? true : asqRaw === '0' ? false : defaults.showAutcSq
+
+  const arqRaw = params.get('arq')
+  const showAutcRq =
+    arqRaw === '1' ? true : arqRaw === '0' ? false : defaults.showAutcRq
+
+  return {
+    refs,
+    preds,
+    matcher,
+    thresholdMode,
+    showSortedAp,
+    showAutc,
+    showAutcSq,
+    showAutcRq,
+  }
 }

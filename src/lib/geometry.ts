@@ -130,3 +130,13 @@ export function mergedIoU(preds: Circle[], ref: Circle): number {
   const inter = A + G - AG
   return inter / AG
 }
+
+export function globalIoU(refs: Circle[], preds: Circle[]): number {
+  const refUnion = unionArea(refs)
+  const predUnion = unionArea(preds)
+  const combined = unionArea([...refs, ...preds])
+  if (combined <= 0) return 0
+  const intersection = refUnion + predUnion - combined
+  if (intersection <= 0) return 0
+  return intersection / combined
+}

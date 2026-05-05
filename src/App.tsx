@@ -15,7 +15,7 @@ import {
   type ThresholdMode,
 } from './lib/metrics'
 import { MATCHER_LABELS, type MatcherKind } from './lib/matchers'
-import type { Circle } from './lib/geometry'
+import { globalIoU, type Circle } from './lib/geometry'
 import { Legend } from './components/Legend'
 import {
   parseSceneState,
@@ -29,6 +29,9 @@ const DEFAULT_STATE: SceneState = {
   matcher: 'greedy',
   thresholdMode: 'scene',
   showSortedAp: false,
+  showAutc: true,
+  showAutcSq: true,
+  showAutcRq: true,
 }
 
 const initialState: SceneState =
@@ -36,12 +39,23 @@ const initialState: SceneState =
     ? DEFAULT_STATE
     : parseSceneState(window.location.search, DEFAULT_STATE)
 
+const middleThreshold = (thresholds: number[]): number | null => {
+  if (thresholds.length === 0) return null
+  return thresholds[Math.floor(thresholds.length / 2)]
+}
+
+const initialPinnedThreshold: number | null = middleThreshold(
+  sceneThresholds(initialState.refs, initialState.preds),
+)
+
 export const App = () => {
   const [refs, setRefs] = useState<Circle[]>(initialState.refs)
   const [preds, setPreds] = useState<Circle[]>(initialState.preds)
   const [offset, setOffset] = useState(0)
   const [hoverThreshold, setHoverThreshold] = useState<number | null>(null)
-  const [pinnedThreshold, setPinnedThreshold] = useState<number | null>(null)
+  const [pinnedThreshold, setPinnedThreshold] = useState<number | null>(
+    initialPinnedThreshold,
+  )
   const [thresholdMode, setThresholdMode] = useState<ThresholdMode>(
     initialState.thresholdMode,
   )
@@ -49,7 +63,12 @@ export const App = () => {
     initialState.matcher,
   )
   const [showSortedAp, setShowSortedAp] = useState(initialState.showSortedAp)
-  const [hasEverPinned, setHasEverPinned] = useState(false)
+  const [showAutc, setShowAutc] = useState(initialState.showAutc)
+  const [showAutcSq, setShowAutcSq] = useState(initialState.showAutcSq)
+  const [showAutcRq, setShowAutcRq] = useState(initialState.showAutcRq)
+  const [hasEverPinned, setHasEverPinned] = useState(
+    initialPinnedThreshold !== null,
+  )
   const [isDragging, setIsDragging] = useState(false)
 
   useEffect(() => {
@@ -60,10 +79,23 @@ export const App = () => {
       matcher: matcherKind,
       thresholdMode,
       showSortedAp,
+      showAutc,
+      showAutcSq,
+      showAutcRq,
     })
     const newUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`
     window.history.replaceState(null, '', newUrl)
-  }, [refs, preds, matcherKind, thresholdMode, showSortedAp, isDragging])
+  }, [
+    refs,
+    preds,
+    matcherKind,
+    thresholdMode,
+    showSortedAp,
+    showAutc,
+    showAutcSq,
+    showAutcRq,
+    isDragging,
+  ])
 
   const effectivePreds = useMemo(
     () => preds.map((c) => ({ ...c, x: c.x + offset })),
@@ -84,6 +116,20 @@ export const App = () => {
     () => (thresholdMode === 'scene' ? computeAUTCStep(curve) : computeAUTC(curve)),
     [thresholdMode, curve],
   )
+  const autcSq = useMemo(
+    () =>
+      thresholdMode === 'scene'
+        ? computeAUTCStep(curve, (p) => p.sq)
+        : computeAUTC(curve, (p) => p.sq),
+    [thresholdMode, curve],
+  )
+  const autcRq = useMemo(
+    () =>
+      thresholdMode === 'scene'
+        ? computeAUTCStep(curve, (p) => p.rq)
+        : computeAUTC(curve, (p) => p.rq),
+    [thresholdMode, curve],
+  )
   const sortedApCurve = useMemo(
     () => computeSortedAPCurve(refs, effectivePreds, matcherKind),
     [refs, effectivePreds, matcherKind],
@@ -91,6 +137,10 @@ export const App = () => {
   const sortedAp = useMemo(
     () => computeSortedAP(sortedApCurve),
     [sortedApCurve],
+  )
+  const gIoU = useMemo(
+    () => globalIoU(refs, effectivePreds),
+    [refs, effectivePreds],
   )
 
   const activeThreshold = hoverThreshold ?? pinnedThreshold
@@ -139,7 +189,7 @@ export const App = () => {
           <div>
             <h1 className='text-xl mb-2'>Interactive Panoptic Quality</h1>
             <p className="text-sm">
-              An interactive demo of Panoptic Quality. Edit the scene, pick a matcher, share the URL.   
+              An interactive demo of Panoptic Quality. Edit the scene, pick a matcher, share the URL.
             </p>
           </div>
           <a
@@ -184,9 +234,8 @@ export const App = () => {
                       key={kind}
                       role="radio"
                       aria-checked={matcherKind === kind}
-                      className={`join-item btn btn-xs sm:btn-sm ${
-                        matcherKind === kind ? 'btn-active btn-primary' : 'btn-soft'
-                      }`}
+                      className={`join-item btn btn-xs sm:btn-sm ${matcherKind === kind ? 'btn-active btn-primary' : 'btn-soft'
+                        }`}
                       onClick={() => setMatcherKind(kind)}
                     >
                       {MATCHER_LABELS[kind]}
@@ -202,34 +251,45 @@ export const App = () => {
               </button>
             </div>
           </div>
-          <div className="flex flex-col gap-4">
-            <CurveChart
-              curve={curve}
-              autc={autc}
-              sortedApCurve={sortedApCurve}
-              sortedAp={sortedAp}
-              hoverThreshold={hoverThreshold}
-              pinnedThreshold={pinnedThreshold}
-              pqAtActive={activeStats?.pq ?? null}
-              renderMode={thresholdMode === 'scene' ? 'step' : 'linear'}
-              showHint={!hasEverPinned}
-              thresholdMode={thresholdMode}
-              onThresholdModeChange={setThresholdMode}
-              showSortedAp={showSortedAp}
-              onShowSortedApChange={setShowSortedAp}
-              onHover={setHoverThreshold}
-              onPin={(t) => {
-                setPinnedThreshold(t)
-                setHasEverPinned(true)
-              }}
-              onClearPin={() => setPinnedThreshold(null)}
-            />
-            <CalcReadout
-              threshold={activeThreshold}
-              stats={activeStats}
-              source={activeSource}
-            />
-          </div>
+          <CurveChart
+            curve={curve}
+            sortedApCurve={sortedApCurve}
+            hoverThreshold={hoverThreshold}
+            pinnedThreshold={pinnedThreshold}
+            pqAtActive={activeStats?.pq ?? null}
+            renderMode={thresholdMode === 'scene' ? 'step' : 'linear'}
+            showHint={!hasEverPinned}
+            thresholdMode={thresholdMode}
+            onThresholdModeChange={setThresholdMode}
+            showSortedAp={showSortedAp}
+            onShowSortedApChange={setShowSortedAp}
+            showAutc={showAutc}
+            onShowAutcChange={setShowAutc}
+            showAutcSq={showAutcSq}
+            onShowAutcSqChange={setShowAutcSq}
+            showAutcRq={showAutcRq}
+            onShowAutcRqChange={setShowAutcRq}
+            onHover={setHoverThreshold}
+            onPin={(t) => {
+              setPinnedThreshold(t)
+              setHasEverPinned(true)
+            }}
+            onClearPin={() => setPinnedThreshold(null)}
+          />
+          <CalcReadout
+            threshold={activeThreshold}
+            stats={activeStats}
+            source={activeSource}
+            globalIoU={gIoU}
+            autc={autc}
+            autcSq={autcSq}
+            autcRq={autcRq}
+            sortedAp={sortedAp}
+            showAutc={showAutc}
+            showAutcSq={showAutcSq}
+            showAutcRq={showAutcRq}
+            showSortedAp={showSortedAp}
+          />
         </div>
       </div>
     </div >

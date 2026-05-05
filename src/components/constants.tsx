@@ -4,7 +4,7 @@ export const COLORS = {
 };
 
 export const OPACITIES = {
-  default: 0.7,
-  matched: 0.95,
-  unmatched: 0.45,
+  default: 0.50,
+  matched: 0.70,
+  unmatched: 0.25,
 };

@@ -5,9 +5,7 @@ export type { ThresholdMode }
 
 type Props = {
   curve: CurvePoint[]
-  autc: number
   sortedApCurve: SortedAPPoint[]
-  sortedAp: number
   hoverThreshold: number | null
   pinnedThreshold: number | null
   pqAtActive: number | null
@@ -17,6 +15,12 @@ type Props = {
   onThresholdModeChange: (mode: ThresholdMode) => void
   showSortedAp: boolean
   onShowSortedApChange: (show: boolean) => void
+  showAutc: boolean
+  onShowAutcChange: (show: boolean) => void
+  showAutcSq: boolean
+  onShowAutcSqChange: (show: boolean) => void
+  showAutcRq: boolean
+  onShowAutcRqChange: (show: boolean) => void
   onHover: (t: number | null) => void
   onPin: (t: number) => void
   onClearPin: () => void
@@ -30,14 +34,14 @@ const PAD_T = 30
 const PAD_B = 30
 const ACCENT = '#0ea5e9'
 const SORTED_AP = '#f59e0b'
+const SQ_COLOR = '#10b981'
+const RQ_COLOR = '#a855f7'
 const PIN = '#6366f1'
 const HOVER = '#94a3b8'
 
 export const CurveChart = ({
   curve,
-  autc,
   sortedApCurve,
-  sortedAp,
   hoverThreshold,
   pinnedThreshold,
   pqAtActive,
@@ -47,6 +51,12 @@ export const CurveChart = ({
   onThresholdModeChange,
   showSortedAp,
   onShowSortedApChange,
+  showAutc,
+  onShowAutcChange,
+  showAutcSq,
+  onShowAutcSqChange,
+  showAutcRq,
+  onShowAutcRqChange,
   onHover,
   onPin,
   onClearPin,
@@ -85,6 +95,25 @@ export const CurveChart = ({
     return snapToCurve(Math.max(0, Math.min(1, tRaw)))
   }
 
+  const buildLinePath = (pick: (p: CurvePoint) => number): string => {
+    if (curve.length === 0) return ''
+    if (renderMode === 'step') {
+      if (curve.length < 2) return ''
+      const xsLocal = curve.map((c) => c.threshold)
+      const ysLocal = curve.map(pick)
+      let path = `M ${x(xsLocal[0])} ${y(ysLocal[1])} H ${x(xsLocal[1])}`
+      for (let i = 1; i < xsLocal.length - 1; i++) {
+        path += ` V ${y(ysLocal[i + 1])} H ${x(xsLocal[i + 1])}`
+      }
+      return path
+    }
+    const xsLocal = [0, ...curve.map((c) => c.threshold)]
+    const ysLocal = [pick(curve[0]), ...curve.map(pick)]
+    return xsLocal
+      .map((t, i) => `${i === 0 ? 'M' : 'L'} ${x(t)} ${y(ysLocal[i])}`)
+      .join(' ')
+  }
+
   const xs =
     renderMode === 'step'
       ? curve.map((c) => c.threshold)
@@ -96,23 +125,18 @@ export const CurveChart = ({
       ? [curve[0].pq, ...curve.map((c) => c.pq)]
       : []
 
-  let linePath = ''
+  const linePath = showAutc ? buildLinePath((p) => p.pq) : ''
+  const sqPath = showAutcSq ? buildLinePath((p) => p.sq) : ''
+  const rqPath = showAutcRq ? buildLinePath((p) => p.rq) : ''
   let areaPath = ''
   if (xs.length > 0) {
     if (renderMode === 'step' && xs.length >= 2) {
-      linePath = `M ${x(xs[0])} ${y(ys[1])} H ${x(xs[1])}`
-      for (let i = 1; i < xs.length - 1; i++) {
-        linePath += ` V ${y(ys[i + 1])} H ${x(xs[i + 1])}`
-      }
       areaPath = `M ${x(xs[0])} ${y(0)} L ${x(xs[0])} ${y(ys[1])} H ${x(xs[1])}`
       for (let i = 1; i < xs.length - 1; i++) {
         areaPath += ` V ${y(ys[i + 1])} H ${x(xs[i + 1])}`
       }
       areaPath += ` L ${x(xs[xs.length - 1])} ${y(0)} Z`
     } else if (renderMode !== 'step') {
-      linePath = xs
-        .map((t, i) => `${i === 0 ? 'M' : 'L'} ${x(t)} ${y(ys[i])}`)
-        .join(' ')
       areaPath =
         `M ${x(xs[0])} ${y(0)} ` +
         xs.map((t, i) => `L ${x(t)} ${y(ys[i])}`).join(' ') +
@@ -145,39 +169,58 @@ export const CurveChart = ({
     <div className="w-full">
       <div className="flex items-baseline justify-between mb-2 gap-2 flex-wrap">
         <h3 className="font-semibold">
-          {showSortedAp ? 'PQ & SortedAP vs IoU threshold' : 'PQ vs IoU threshold'}
+          {(() => {
+            const parts: string[] = []
+            if (showAutc) parts.push('PQ')
+            if (showAutcSq) parts.push('SQ')
+            if (showAutcRq) parts.push('RQ')
+            if (showSortedAp) parts.push('SortedAP')
+            if (parts.length === 0) return 'IoU threshold'
+            return `${parts.join(parts.length > 2 ? ', ' : ' & ')} vs IoU threshold`
+          })()}
         </h3>
-        <div className="flex items-center gap-3 font-mono text-sm flex-wrap">
-          <span>
-            AUTC = <span className="text-lg font-bold">{autc.toFixed(3)}</span>
-          </span>
-          {showSortedAp && (
-            <span>
-              sortedAP ={' '}
-              <span className="text-lg font-bold">{sortedAp.toFixed(3)}</span>
-            </span>
-          )}
-          {pinnedThreshold !== null && (
-            <span className="flex items-center gap-1">
-              <span style={{ color: PIN }}>Pinned @ {pinnedThreshold.toFixed(3)}</span>
-              <button
-                className="btn btn-ghost btn-xs"
-                onClick={onClearPin}
-                aria-label="Clear pinned threshold"
-              >
-                ✕
-              </button>
-            </span>
-          )}
-        </div>
       </div>
-      <div className="flex items-center gap-4 mb-2 text-xs font-mono opacity-80">
-        <span className="flex items-center gap-1.5">
-          <svg width="20" height="6" viewBox="0 0 20 6" aria-hidden="true">
-            <line x1="0" x2="20" y1="3" y2="3" stroke={ACCENT} strokeWidth="2" />
-          </svg>
-          PQ
-        </span>
+      <div className="flex items-center gap-4 mb-2 text-xs font-mono opacity-80 flex-wrap">
+        {showAutc && (
+          <span className="flex items-center gap-1.5">
+            <svg width="20" height="6" viewBox="0 0 20 6" aria-hidden="true">
+              <line x1="0" x2="20" y1="3" y2="3" stroke={ACCENT} strokeWidth="2" />
+            </svg>
+            PQ
+          </span>
+        )}
+        {showAutcSq && (
+          <span className="flex items-center gap-1.5">
+            <svg width="20" height="6" viewBox="0 0 20 6" aria-hidden="true">
+              <line
+                x1="0"
+                x2="20"
+                y1="3"
+                y2="3"
+                stroke={SQ_COLOR}
+                strokeWidth="2"
+                strokeDasharray="2 3"
+              />
+            </svg>
+            SQ
+          </span>
+        )}
+        {showAutcRq && (
+          <span className="flex items-center gap-1.5">
+            <svg width="20" height="6" viewBox="0 0 20 6" aria-hidden="true">
+              <line
+                x1="0"
+                x2="20"
+                y1="3"
+                y2="3"
+                stroke={RQ_COLOR}
+                strokeWidth="2"
+                strokeDasharray="2 3"
+              />
+            </svg>
+            RQ
+          </span>
+        )}
         {showSortedAp && (
           <span className="flex items-center gap-1.5">
             <svg width="20" height="6" viewBox="0 0 20 6" aria-hidden="true">
@@ -207,7 +250,15 @@ export const CurveChart = ({
           onPointerLeave={() => onHover(null)}
           onClick={(e) => {
             const t = thresholdFromClientX(e.clientX)
-            if (t !== null) onPin(t)
+            if (t === null) return
+            if (
+              pinnedThreshold !== null &&
+              Math.abs(t - pinnedThreshold) < 1e-9
+            ) {
+              onClearPin()
+            } else {
+              onPin(t)
+            }
           }}
         >
           {gridYs.map((v) => (
@@ -233,8 +284,30 @@ export const CurveChart = ({
             />
           ))}
 
-          <path d={areaPath} fill={ACCENT} fillOpacity={0.2} />
-          <path d={linePath} fill="none" stroke={ACCENT} strokeWidth={2} />
+          {showAutc && (
+            <>
+              <path d={areaPath} fill={ACCENT} fillOpacity={0.2} />
+              <path d={linePath} fill="none" stroke={ACCENT} strokeWidth={2} />
+            </>
+          )}
+          {showAutcSq && (
+            <path
+              d={sqPath}
+              fill="none"
+              stroke={SQ_COLOR}
+              strokeWidth={2}
+              strokeDasharray="2 3"
+            />
+          )}
+          {showAutcRq && (
+            <path
+              d={rqPath}
+              fill="none"
+              stroke={RQ_COLOR}
+              strokeWidth={2}
+              strokeDasharray="2 3"
+            />
+          )}
           {showSortedAp && (
             <path
               d={sortedApPath}
@@ -266,7 +339,7 @@ export const CurveChart = ({
               strokeDasharray="4 3"
             />
           )}
-          {activeThreshold !== null && pqAtActive !== null && (
+          {showAutc && activeThreshold !== null && pqAtActive !== null && (
             <>
               <circle
                 cx={x(activeThreshold)}
@@ -395,6 +468,43 @@ export const CurveChart = ({
                 </button>
               </li>
               <li className="menu-title">Curves</li>
+              <li>
+                <label className="cursor-pointer flex items-center justify-between gap-2">
+                  <span>Show AUTC (PQ)</span>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-sm"
+                    checked={showAutc}
+                    onChange={(e) => onShowAutcChange(e.target.checked)}
+                  />
+                </label>
+              </li>
+              <li>
+                <label className="cursor-pointer flex items-center justify-between gap-2">
+                  <span>
+                    Show AUTC<sub>SQ</sub>
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-sm"
+                    checked={showAutcSq}
+                    onChange={(e) => onShowAutcSqChange(e.target.checked)}
+                  />
+                </label>
+              </li>
+              <li>
+                <label className="cursor-pointer flex items-center justify-between gap-2">
+                  <span>
+                    Show AUTC<sub>RQ</sub>
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-sm"
+                    checked={showAutcRq}
+                    onChange={(e) => onShowAutcRqChange(e.target.checked)}
+                  />
+                </label>
+              </li>
               <li>
                 <label className="cursor-pointer flex items-center justify-between gap-2">
                   <span>Show SortedAP</span>

@@ -4,6 +4,7 @@ import {
   circleIoU,
   unionArea,
   mergedIoU,
+  globalIoU,
 } from './geometry'
 
 const c = (x: number, y: number, r: number): Circle => ({
@@ -245,5 +246,44 @@ describe('mergedIoU', () => {
     const before = mergedIoU([inside], ref)
     const after = mergedIoU([inside, far], ref)
     expect(after).toBeLessThanOrEqual(before + EPS)
+  })
+})
+
+describe('globalIoU', () => {
+  it('returns 0 when both sets are empty', () => {
+    expect(globalIoU([], [])).toBe(0)
+  })
+
+  it('returns 0 when one set is empty', () => {
+    expect(globalIoU([c(0, 0, 1)], [])).toBe(0)
+    expect(globalIoU([], [c(0, 0, 1)])).toBe(0)
+  })
+
+  it('returns 1 for identical singleton sets', () => {
+    expect(globalIoU([c(0, 0, 1)], [c(0, 0, 1)])).toBeCloseTo(1, 12)
+  })
+
+  it('returns 0 for fully disjoint sets', () => {
+    expect(globalIoU([c(0, 0, 1)], [c(10, 0, 1)])).toBeCloseTo(0, 12)
+  })
+
+  it('matches circleIoU for singleton vs singleton', () => {
+    const a = c(0, 0, 1)
+    const b = c(1, 0, 1)
+    expect(globalIoU([a], [b])).toBeCloseTo(circleIoU(a, b), 12)
+  })
+
+  it('is symmetric', () => {
+    const refs = [c(0, 0, 1), c(2, 0, 1)]
+    const preds = [c(0.5, 0.2, 1.2)]
+    expect(globalIoU(refs, preds)).toBeCloseTo(globalIoU(preds, refs), 12)
+  })
+
+  it('returns a value in [0, 1]', () => {
+    const refs = [c(0, 0, 1), c(1.5, 0, 1)]
+    const preds = [c(0.7, 0.3, 1), c(3, 0, 0.5)]
+    const v = globalIoU(refs, preds)
+    expect(v).toBeGreaterThanOrEqual(0)
+    expect(v).toBeLessThanOrEqual(1)
   })
 })

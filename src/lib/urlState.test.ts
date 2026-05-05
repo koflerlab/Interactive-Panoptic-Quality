@@ -11,7 +11,10 @@ const defaults: SceneState = {
   preds: [{ x: 200, y: 80, r: 40 }],
   matcher: 'greedy',
   thresholdMode: 'scene',
-  showSortedAp: true,
+  showSortedAp: false,
+  showAutc: true,
+  showAutcSq: false,
+  showAutcRq: false,
 }
 
 describe('serializeSceneState', () => {
@@ -54,6 +57,9 @@ describe('parseSceneState', () => {
       matcher: 'hungarian',
       thresholdMode: 'discrete',
       showSortedAp: false,
+      showAutc: false,
+      showAutcSq: false,
+      showAutcRq: false,
     }
     const params = serializeSceneState(state)
     const parsed = parseSceneState(params, defaults)
@@ -61,6 +67,9 @@ describe('parseSceneState', () => {
     expect(parsed.matcher).toBe('hungarian')
     expect(parsed.thresholdMode).toBe('discrete')
     expect(parsed.showSortedAp).toBe(false)
+    expect(parsed.showAutc).toBe(false)
+    expect(parsed.showAutcSq).toBe(false)
+    expect(parsed.showAutcRq).toBe(false)
     expect(parsed.refs).toHaveLength(2)
     expect(parsed.preds).toHaveLength(1)
 
@@ -124,6 +133,27 @@ describe('parseSceneState', () => {
   it('falls back to default for unknown sap value', () => {
     expect(parseSceneState('sap=maybe', defaults).showSortedAp).toBe(
       defaults.showSortedAp,
+    )
+  })
+
+  it('parses autc=0/1, asq=0/1, and arq=0/1 as booleans', () => {
+    expect(parseSceneState('autc=0', defaults).showAutc).toBe(false)
+    expect(parseSceneState('autc=1', defaults).showAutc).toBe(true)
+    expect(parseSceneState('asq=0', defaults).showAutcSq).toBe(false)
+    expect(parseSceneState('asq=1', defaults).showAutcSq).toBe(true)
+    expect(parseSceneState('arq=0', defaults).showAutcRq).toBe(false)
+    expect(parseSceneState('arq=1', defaults).showAutcRq).toBe(true)
+  })
+
+  it('falls back to defaults for unknown autc/asq/arq values', () => {
+    expect(parseSceneState('autc=maybe', defaults).showAutc).toBe(
+      defaults.showAutc,
+    )
+    expect(parseSceneState('asq=maybe', defaults).showAutcSq).toBe(
+      defaults.showAutcSq,
+    )
+    expect(parseSceneState('arq=maybe', defaults).showAutcRq).toBe(
+      defaults.showAutcRq,
     )
   })
 

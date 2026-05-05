@@ -278,6 +278,36 @@ describe('computeAUTCStep', () => {
   })
 })
 
+describe('AUTC decomposition via pick parameter', () => {
+  const curve = [
+    { threshold: 0.0, pq: 0.4, sq: 0.8, rq: 0.5, tp: 1 },
+    { threshold: 0.5, pq: 0.6, sq: 0.6, rq: 1.0, tp: 1 },
+    { threshold: 1.0, pq: 0.0, sq: 0.0, rq: 0.0, tp: 0 },
+  ]
+
+  it('computeAUTCStep integrates SQ and RQ when pick is provided', () => {
+    // SQ step: (0.5-0.0)*0.6 + (1.0-0.5)*0.0 = 0.30
+    expect(computeAUTCStep(curve, (p) => p.sq)).toBeCloseTo(0.3, 12)
+    // RQ step: (0.5-0.0)*1.0 + (1.0-0.5)*0.0 = 0.50
+    expect(computeAUTCStep(curve, (p) => p.rq)).toBeCloseTo(0.5, 12)
+  })
+
+  it('computeAUTC trapezoidal integrates SQ and RQ when pick is provided', () => {
+    // SQ trapezoid with virtual (0, sq[0]=0.8): (0-0)*(0.8+0.8)/2 + (0.5-0)*(0.8+0.6)/2 + (1.0-0.5)*(0.6+0)/2 = 0 + 0.35 + 0.15 = 0.50
+    expect(computeAUTC(curve, (p) => p.sq)).toBeCloseTo(0.5, 12)
+    // RQ trapezoid with virtual (0, rq[0]=0.5): 0 + (0.5)*(0.5+1)/2 + (0.5)*(1+0)/2 = 0 + 0.375 + 0.25 = 0.625
+    expect(computeAUTC(curve, (p) => p.rq)).toBeCloseTo(0.625, 12)
+  })
+
+  it('default pick still returns the PQ integral', () => {
+    expect(computeAUTC(curve)).toBeCloseTo(computeAUTC(curve, (p) => p.pq), 12)
+    expect(computeAUTCStep(curve)).toBeCloseTo(
+      computeAUTCStep(curve, (p) => p.pq),
+      12,
+    )
+  })
+})
+
 describe('computeSortedAPCurve', () => {
   it('returns a single zero point when nothing matches', () => {
     const refs = [c(0, 0, 1)]
