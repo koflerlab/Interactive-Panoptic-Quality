@@ -72,8 +72,8 @@ export const CalcReadout = ({
     )
   }
 
-  const { tp, fp, fn, sq, rq, pq, matchedPairs } = stats
-  const iouList = matchedPairs.map((p) => p.iou.toFixed(3)).join(' + ')
+  const { tp, fp, fn, sq, rq, pq, mergedMatches } = stats
+  const iouList = mergedMatches.map((m) => m.iou.toFixed(3)).join(' + ')
   const rqNum = tp
   const rqDen = tp + 0.5 * fp + 0.5 * fn
 

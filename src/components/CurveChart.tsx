@@ -158,6 +158,18 @@ export const CurveChart = ({
   const gridXs = [0, 0.2, 0.4, 0.6, 0.8, 1]
   const gridYs = [0, 0.25, 0.5, 0.75, 1]
 
+  const legendEntries: { label: string; color: string; dash?: string }[] = []
+  if (showAutc) legendEntries.push({ label: 'PQ', color: ACCENT })
+  if (showAutcSq) legendEntries.push({ label: 'SQ', color: SQ_COLOR, dash: '2 3' })
+  if (showAutcRq) legendEntries.push({ label: 'RQ', color: RQ_COLOR, dash: '2 3' })
+  if (showSortedAp)
+    legendEntries.push({ label: 'SortedAP', color: SORTED_AP, dash: '4 3' })
+  const legendRowH = 14
+  const legendBoxW = 50
+  const legendBoxH = legendEntries.length * legendRowH + 6
+  const legendX = W - PAD_R - legendBoxW - 4
+  const legendY = PAD_T + 4
+
   const activeThreshold = hoverThreshold ?? pinnedThreshold
 
   const selectMode = (mode: ThresholdMode) => {
@@ -180,68 +192,11 @@ export const CurveChart = ({
           })()}
         </h3>
       </div>
-      <div className="flex items-center gap-4 mb-2 text-xs font-mono opacity-80 flex-wrap">
-        {showAutc && (
-          <span className="flex items-center gap-1.5">
-            <svg width="20" height="6" viewBox="0 0 20 6" aria-hidden="true">
-              <line x1="0" x2="20" y1="3" y2="3" stroke={ACCENT} strokeWidth="2" />
-            </svg>
-            PQ
-          </span>
-        )}
-        {showAutcSq && (
-          <span className="flex items-center gap-1.5">
-            <svg width="20" height="6" viewBox="0 0 20 6" aria-hidden="true">
-              <line
-                x1="0"
-                x2="20"
-                y1="3"
-                y2="3"
-                stroke={SQ_COLOR}
-                strokeWidth="2"
-                strokeDasharray="2 3"
-              />
-            </svg>
-            SQ
-          </span>
-        )}
-        {showAutcRq && (
-          <span className="flex items-center gap-1.5">
-            <svg width="20" height="6" viewBox="0 0 20 6" aria-hidden="true">
-              <line
-                x1="0"
-                x2="20"
-                y1="3"
-                y2="3"
-                stroke={RQ_COLOR}
-                strokeWidth="2"
-                strokeDasharray="2 3"
-              />
-            </svg>
-            RQ
-          </span>
-        )}
-        {showSortedAp && (
-          <span className="flex items-center gap-1.5">
-            <svg width="20" height="6" viewBox="0 0 20 6" aria-hidden="true">
-              <line
-                x1="0"
-                x2="20"
-                y1="3"
-                y2="3"
-                stroke={SORTED_AP}
-                strokeWidth="2"
-                strokeDasharray="4 3"
-              />
-            </svg>
-            SortedAP
-          </span>
-        )}
-      </div>
       <div className="relative">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
+          fontFamily="serif"
           className="w-full h-auto bg-base-100 rounded-lg border border-base-300 cursor-crosshair"
           onPointerMove={(e) => {
             const t = thresholdFromClientX(e.clientX)
@@ -407,6 +362,35 @@ export const CurveChart = ({
               PQ
             </text>
           </g>
+
+          {legendEntries.length > 0 && (
+            <g transform={`translate(${legendX}, ${legendY})`} fontSize="11">
+              <rect
+                x={0}
+                y={0}
+                width={legendBoxW}
+                height={legendBoxH}
+                fill="white"
+                fillOpacity={0.1}
+              />
+              {legendEntries.map((e, i) => (
+                <g key={e.label} transform={`translate(6, ${6 + i * legendRowH})`}>
+                  <line
+                    x1={0}
+                    x2={20}
+                    y1={6}
+                    y2={6}
+                    stroke={e.color}
+                    strokeWidth={2}
+                    strokeDasharray={e.dash}
+                  />
+                  <text x={26} y={9} fill="currentColor">
+                    {e.label}
+                  </text>
+                </g>
+              ))}
+            </g>
+          )}
         </svg>
 
         {showHint && (
