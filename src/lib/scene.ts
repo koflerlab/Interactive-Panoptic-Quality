@@ -1,7 +1,7 @@
 import type { Circle } from './geometry'
 
 export const SCENE_WIDTH = 600
-export const SCENE_HEIGHT = 362
+export const SCENE_HEIGHT = 360
 
 export const EDGE_BAND = 8
 export const R_MIN = 10

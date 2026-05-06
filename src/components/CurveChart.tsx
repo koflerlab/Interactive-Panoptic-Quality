@@ -28,10 +28,10 @@ type Props = {
 
 const W = 600
 const H = 360
-const PAD_L = 50
+const PAD_L = 60
 const PAD_R = 30
 const PAD_T = 30
-const PAD_B = 30
+const PAD_B = 40
 const ACCENT = '#0ea5e9'
 const SORTED_AP = '#f59e0b'
 const SQ_COLOR = '#10b981'
@@ -155,7 +155,7 @@ export const CurveChart = ({
     sortedApPath += ` H ${x(1)}`
   }
 
-  const gridXs = [0, 0.2, 0.4, 0.6, 0.8, 1]
+  const gridXs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
   const gridYs = [0, 0.25, 0.5, 0.75, 1]
 
   const legendEntries: { label: string; color: string; dash?: string }[] = []
@@ -179,8 +179,8 @@ export const CurveChart = ({
 
   return (
     <div className="w-full">
-      <div className="flex items-baseline justify-between mb-2 gap-2 flex-wrap">
-        <h3 className="font-semibold">
+      <div className="flex items-baseline justify-between gap-2 flex-wrap h-[36px]">
+        <h2>
           {(() => {
             const parts: string[] = []
             if (showAutc) parts.push('PQ')
@@ -190,7 +190,7 @@ export const CurveChart = ({
             if (parts.length === 0) return 'IoU threshold'
             return `${parts.join(parts.length > 2 ? ', ' : ' & ')} vs IoU threshold`
           })()}
-        </h3>
+        </h2>
       </div>
       <div className="relative">
         <svg
@@ -304,15 +304,6 @@ export const CurveChart = ({
                 stroke="white"
                 strokeWidth={1.5}
               />
-              <text
-                x={x(activeThreshold) + 8}
-                y={y(pqAtActive) - 8}
-                fontSize="11"
-                fill="currentColor"
-                style={{ pointerEvents: 'none' }}
-              >
-                t={activeThreshold.toFixed(2)}, PQ={pqAtActive.toFixed(3)}
-              </text>
             </>
           )}
 
@@ -333,22 +324,29 @@ export const CurveChart = ({
             opacity="0.5"
           />
 
-          <g fontSize="10" fill="currentColor" opacity="0.7" style={{ pointerEvents: 'none' }}>
-            {gridXs.map((t) => (
-              <text key={`tx-${t}`} x={x(t)} y={H - PAD_B + 14} textAnchor="middle">
-                {t.toFixed(1)}
-              </text>
-            ))}
+          <g fontSize="16" fill="currentColor" opacity="0.7" style={{ pointerEvents: 'none' }}>
+            {gridXs.map((t) =>
+              t === 0 ? null : (
+                <text
+                  key={`tx-${t}`}
+                  x={x(t)}
+                  y={H - PAD_B + 16}
+                  textAnchor="middle"
+                >
+                  {t.toFixed(1)}
+                </text>
+              ),
+            )}
             {gridYs.map((v) => (
               <text key={`ty-${v}`} x={PAD_L - 6} y={y(v) + 3} textAnchor="end">
-                {v.toFixed(2)}
+                {v === 0 ? '0' : v.toFixed(2)}
               </text>
             ))}
             <text
               x={PAD_L + plotW / 2}
               y={H - 6}
               textAnchor="middle"
-              fontSize="11"
+              fontSize="16"
             >
               IoU threshold
             </text>
@@ -356,7 +354,7 @@ export const CurveChart = ({
               x={16}
               y={PAD_T + plotH / 2}
               textAnchor="middle"
-              fontSize="11"
+              fontSize="16"
               transform={`rotate(-90 16 ${PAD_T + plotH / 2})`}
             >
               PQ
@@ -412,7 +410,7 @@ export const CurveChart = ({
           </div>
         )}
 
-        <div className="absolute top-1 right-1 z-10">
+        {/* <div className="absolute top-1 right-1 z-10">
           <div className="dropdown dropdown-end">
             <div
               tabIndex={0}
@@ -502,7 +500,7 @@ export const CurveChart = ({
               </li>
             </ul>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   )
