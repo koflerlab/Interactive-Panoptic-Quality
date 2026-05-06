@@ -410,7 +410,7 @@ export const CurveChart = ({
           </div>
         )}
 
-        {/* <div className="absolute top-1 right-1 z-10">
+        <div className="absolute top-1 right-1 z-10">
           <div className="dropdown dropdown-end">
             <div
               tabIndex={0}
@@ -500,7 +500,7 @@ export const CurveChart = ({
               </li>
             </ul>
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   )
