@@ -4,6 +4,8 @@ Interactive demo of the **Area Under Threshold Curve (AUTC)** metric from [panop
 
 Test Demo on [GitHub Pages](https://erikgro.github.io/AUTC-Interactive/).
 
+![interactive playground](AUTC.png)
+
 ## Deviations from panoptica
 
 This is a teaching demo, not a port. The math is consistent with panoptica's definitions of PQ, SQ, RQ, and AUTC, but the surface around it differs in several ways.
