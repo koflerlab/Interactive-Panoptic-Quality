@@ -164,10 +164,10 @@ export const CurveChart = ({
   if (showAutcRq) legendEntries.push({ label: 'RQ', color: RQ_COLOR, dash: '2 3' })
   if (showSortedAp)
     legendEntries.push({ label: 'SortedAP', color: SORTED_AP, dash: '4 3' })
-  const legendRowH = 14
+  const legendRowH = 18
   const legendBoxW = 50
   const legendBoxH = legendEntries.length * legendRowH + 6
-  const legendX = W - PAD_R - legendBoxW - 4
+  const legendX = W - PAD_R - legendBoxW - 16
   const legendY = PAD_T + 4
 
   const activeThreshold = hoverThreshold ?? pinnedThreshold
@@ -382,7 +382,7 @@ export const CurveChart = ({
                     strokeWidth={2}
                     strokeDasharray={e.dash}
                   />
-                  <text x={26} y={9} fill="currentColor">
+                  <text fontSize={16} x={26} y={9} fill="currentColor">
                     {e.label}
                   </text>
                 </g>
