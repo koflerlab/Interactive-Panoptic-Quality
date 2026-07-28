@@ -1,6 +1,6 @@
 # Interactive Panoptic Quality Playground
 
-Interactive demo of the **Area Under Threshold Curve (AUTC)** metric from [panoptica](https://github.com/BrainLesion/panoptica). Drag prediction circles over reference segmentations (or use the global offset slider) and watch the Panoptic Quality vs IoU-threshold curve — and the AUTC number — update live.
+Interactive demo of the **Area Under Threshold Curve (AUTC)** metric. Drag prediction circles over reference segmentations (or use the global offset slider) and watch the Panoptic Quality vs IoU-threshold curve — and the AUTC number — update live.
 
 ![interactive playground](AUTC.png)
 
