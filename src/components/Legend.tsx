@@ -1,7 +1,7 @@
 import { COLORS, OPACITIES } from './constants';
 
 export function Legend({ hasActiveThreshold }: { hasActiveThreshold: boolean }) {
-    return <div className='text-xs h-8 grid grid-cols-4 grid-rows-1'>
+    return <div className='text-[10px] sm:text-xs h-8 grid grid-cols-4 grid-rows-1'>
         {hasActiveThreshold ?
             <>
                 <div className='flex items-center gap-1'>

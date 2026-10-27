@@ -1,10 +1,8 @@
 # Interactive Panoptic Quality Playground
 
-Run the [interactive playground](https://koflerlab.github.io/Interactive-Panoptic-Quality/).
+Run the [interactive playground](https://koflerlab.org/panoptica-interactive).
 
 Interactive demo of the **Area Under Threshold Curve (AUTC)** metric from [panoptica](https://github.com/BrainLesion/panoptica). Drag prediction circles over reference segmentations (or use the global offset slider) and watch the Panoptic Quality vs IoU-threshold curve — and the AUTC number — update live.
-
-Test Demo on [GitHub Pages](https://erikgro.github.io/AUTC-Interactive/).
 
 ![interactive playground](AUTC.png)
 
@@ -14,6 +12,7 @@ This is a teaching demo, not a port. The math is consistent with panoptica's def
 
 - **Domain.** panoptica evaluates 2D / 3D voxel masks. This app only deals with 2D circles, so all area, IoU, and union-area computations are closed-form (`circleIoU`, `unionArea` via Green's theorem on disk-union boundaries) instead of pixel counting. There is no rasterization anywhere; the geometry is exact to machine precision.
 - **Pipeline.** panoptica's full flow is *instance approximation → instance matching → instance evaluation*, mediated by a `MatchedInstancePair` and an `InstanceLabelMap`. Here matching and evaluation are inlined: matchers return a `MergedMatch[]`, which `computePQ` consumes directly. There is no relabeling step — for `maximize-merge` we compute the merged IoU analytically from the original circles instead of building a relabeled mask.
+- **Strict threshold.** A pair only matches if its IoU is strictly greater than the threshold (`IoU > t`), as in the original PQ definition. This corresponds to panoptica's `strict_threshold=True`. panoptica's default is `IoU >= t`.
 - **Hungarian.** panoptica calls `scipy.optimize.linear_sum_assignment`. We ship a from-scratch Kuhn–Munkres O(n³) implementation in [`src/lib/hungarian.ts`](src/lib/hungarian.ts), with rectangular cost matrices supported by padding.
 - **`allow_many_to_one` on the greedy matcher is omitted.** In panoptica it works because the downstream pipeline merges the multiply-matched predictions into one mask before computing PQ. Without that merge step, counting each many-to-one pair as a separate TP gives a metric that's hard to interpret. Use `maximize-merge` if you want many-to-one semantics.
 - **`MaximizeMergeMatching` uses analytical union area.** panoptica computes IoU on the rasterized union of merged masks. We compute `IoU(∪ preds, ref)` directly from circle positions and radii. No quantization error, no canvas, O(N²) per merged group.

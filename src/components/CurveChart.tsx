@@ -38,6 +38,7 @@ const SQ_COLOR = '#10b981'
 const RQ_COLOR = '#a855f7'
 const PIN = '#6366f1'
 const HOVER = '#94a3b8'
+const PIN_HIT_RADIUS = 4
 
 export const CurveChart = ({
   curve,
@@ -92,7 +93,8 @@ export const CurveChart = ({
     if (!ctm) return null
     const local = pt.matrixTransform(ctm.inverse())
     const tRaw = (local.x - PAD_L) / plotW
-    return snapToCurve(Math.max(0, Math.min(1, tRaw)))
+    const t = Math.max(0, Math.min(1, tRaw))
+    return thresholdMode === 'discrete' ? snapToCurve(t) : t
   }
 
   const buildLinePath = (pick: (p: CurvePoint) => number): string => {
@@ -101,9 +103,9 @@ export const CurveChart = ({
       if (curve.length < 2) return ''
       const xsLocal = curve.map((c) => c.threshold)
       const ysLocal = curve.map(pick)
-      let path = `M ${x(xsLocal[0])} ${y(ysLocal[1])} H ${x(xsLocal[1])}`
+      let path = `M ${x(xsLocal[0])} ${y(ysLocal[0])} H ${x(xsLocal[1])}`
       for (let i = 1; i < xsLocal.length - 1; i++) {
-        path += ` V ${y(ysLocal[i + 1])} H ${x(xsLocal[i + 1])}`
+        path += ` V ${y(ysLocal[i])} H ${x(xsLocal[i + 1])}`
       }
       return path
     }
@@ -131,9 +133,9 @@ export const CurveChart = ({
   let areaPath = ''
   if (xs.length > 0) {
     if (renderMode === 'step' && xs.length >= 2) {
-      areaPath = `M ${x(xs[0])} ${y(0)} L ${x(xs[0])} ${y(ys[1])} H ${x(xs[1])}`
+      areaPath = `M ${x(xs[0])} ${y(0)} L ${x(xs[0])} ${y(ys[0])} H ${x(xs[1])}`
       for (let i = 1; i < xs.length - 1; i++) {
-        areaPath += ` V ${y(ys[i + 1])} H ${x(xs[i + 1])}`
+        areaPath += ` V ${y(ys[i])} H ${x(xs[i + 1])}`
       }
       areaPath += ` L ${x(xs[xs.length - 1])} ${y(0)} Z`
     } else if (renderMode !== 'step') {
@@ -208,7 +210,7 @@ export const CurveChart = ({
             if (t === null) return
             if (
               pinnedThreshold !== null &&
-              Math.abs(t - pinnedThreshold) < 1e-9
+              Math.abs(x(t) - x(pinnedThreshold)) <= PIN_HIT_RADIUS
             ) {
               onClearPin()
             } else {

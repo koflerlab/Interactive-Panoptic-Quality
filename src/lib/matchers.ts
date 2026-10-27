@@ -41,7 +41,7 @@ function matchGreedy(
   const matchedPred = new Set<number>()
   const out: MergedMatch[] = []
   for (const p of pairs) {
-    if (p.iou < threshold) break
+    if (p.iou <= threshold) break
     if (matchedRef.has(p.refIdx) || matchedPred.has(p.predIdx)) continue
     matchedRef.add(p.refIdx)
     matchedPred.add(p.predIdx)
@@ -66,7 +66,7 @@ function matchHungarian(
     const row = new Array<number>(m).fill(DEFAULT_COST)
     for (let j = 0; j < m; j++) {
       const iou = circleIoU(refs[i], preds[j])
-      if (iou > 0 && iou >= threshold) row[j] = 1 - iou
+      if (iou > 0 && iou > threshold) row[j] = 1 - iou
     }
     cost.push(row)
   }
@@ -105,7 +105,7 @@ function matchMaximizeMerge(
         existing.iou = newIoU
         matchedPred.add(p.predIdx)
       }
-    } else if (p.iou >= threshold) {
+    } else if (p.iou > threshold) {
       merges.set(p.refIdx, { predIdxs: [p.predIdx], iou: p.iou })
       matchedPred.add(p.predIdx)
     }

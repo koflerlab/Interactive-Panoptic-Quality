@@ -183,7 +183,7 @@ export const App = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 p-6">
+    <div className="min-h-screen bg-base-200 p-3 sm:p-6">
       <div className="max-w-6xl mx-auto">
         <header className="mb-6 flex items-start justify-between gap-4">
           <div>

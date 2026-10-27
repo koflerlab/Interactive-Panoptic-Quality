@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { type Circle } from './geometry'
+import { type Circle, circleIoU } from './geometry'
 import {
   match,
   MATCHER_LABELS,
@@ -37,6 +37,22 @@ describe('match — degenerate inputs', () => {
 
     it(`returns no merges when both are empty (${kind})`, () => {
       expect(match([], [], 0.5, kind)).toEqual([])
+    })
+  }
+})
+
+describe('match — strict threshold', () => {
+  const refs = [c(0, 0, 1)]
+  const preds = [c(0.6, 0, 1)]
+  const iou = circleIoU(refs[0], preds[0])
+
+  for (const kind of ALL_KINDS) {
+    it(`does not match a pair whose IoU equals the threshold (${kind})`, () => {
+      expect(match(refs, preds, iou, kind)).toEqual([])
+    })
+
+    it(`matches a pair whose IoU is just above the threshold (${kind})`, () => {
+      expect(match(refs, preds, iou - 1e-9, kind)).toHaveLength(1)
     })
   }
 })

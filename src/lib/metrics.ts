@@ -108,9 +108,10 @@ export function computeAUTCStep(
   pick: (p: CurvePoint) => number = (p) => p.pq,
 ): number {
   if (curve.length < 2) return 0
+  // Matching is strict (IoU > t), so the curve holds its value on [t_i, t_{i+1}).
   let area = 0
   for (let i = 0; i < curve.length - 1; i++) {
-    area += (curve[i + 1].threshold - curve[i].threshold) * pick(curve[i + 1])
+    area += (curve[i + 1].threshold - curve[i].threshold) * pick(curve[i])
   }
   return area
 }

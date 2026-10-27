@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { type Circle } from './geometry'
+import { type Circle, circleIoU } from './geometry'
 import {
   computePQ,
   computeCurve,
@@ -267,14 +267,25 @@ describe('computeAUTCStep', () => {
     ).toBe(0)
   })
 
-  it('integrates a step function: width × right-endpoint pq', () => {
+  it('integrates a step function: width × left-endpoint pq', () => {
     const curve = [
       { threshold: 0.0, pq: 0.5, sq: 0.5, rq: 1, tp: 1 },
       { threshold: 0.4, pq: 0.7, sq: 0.7, rq: 1, tp: 1 },
       { threshold: 1.0, pq: 0.1, sq: 0.1, rq: 1, tp: 1 },
     ]
-    // step area = (0.4 - 0.0) * 0.7 + (1.0 - 0.4) * 0.1 = 0.28 + 0.06 = 0.34
-    expect(computeAUTCStep(curve)).toBeCloseTo(0.34, 12)
+    // step area = (0.4 - 0.0) * 0.5 + (1.0 - 0.4) * 0.7 = 0.2 + 0.42 = 0.62
+    expect(computeAUTCStep(curve)).toBeCloseTo(0.62, 12)
+  })
+
+  it('equals the exact PQ integral on scene thresholds', () => {
+    // One pair with IoU v: PQ = v on [0, v) and 0 on [v, 1], so AUTC = v².
+    const refs = [c(0, 0, 1)]
+    const preds = [c(0.6, 0, 1)]
+    const v = circleIoU(refs[0], preds[0])
+    for (const kind of ['greedy', 'hungarian', 'maximize-merge'] as const) {
+      const curve = computeCurve(refs, preds, sceneThresholds(refs, preds), kind)
+      expect(computeAUTCStep(curve)).toBeCloseTo(v * v, 12)
+    }
   })
 })
 
@@ -286,10 +297,10 @@ describe('AUTC decomposition via pick parameter', () => {
   ]
 
   it('computeAUTCStep integrates SQ and RQ when pick is provided', () => {
-    // SQ step: (0.5-0.0)*0.6 + (1.0-0.5)*0.0 = 0.30
-    expect(computeAUTCStep(curve, (p) => p.sq)).toBeCloseTo(0.3, 12)
-    // RQ step: (0.5-0.0)*1.0 + (1.0-0.5)*0.0 = 0.50
-    expect(computeAUTCStep(curve, (p) => p.rq)).toBeCloseTo(0.5, 12)
+    // SQ step: (0.5-0.0)*0.8 + (1.0-0.5)*0.6 = 0.70
+    expect(computeAUTCStep(curve, (p) => p.sq)).toBeCloseTo(0.7, 12)
+    // RQ step: (0.5-0.0)*0.5 + (1.0-0.5)*1.0 = 0.75
+    expect(computeAUTCStep(curve, (p) => p.rq)).toBeCloseTo(0.75, 12)
   })
 
   it('computeAUTC trapezoidal integrates SQ and RQ when pick is provided', () => {
